@@ -64,6 +64,21 @@ class EmployeeListView(DashboardAccessMixin, ListView):
     context_object_name = 'employees'
     paginate_by = 25
 
+    def post(self, request):
+        from apps.users.services import sync_users_from_api
+        try:
+            result = sync_users_from_api()
+            request.session['sync_result'] = (
+                f"Muvaffaqiyatli: {result['created']} yangi, "
+                f"{result['updated']} yangilandi, "
+                f"{result['deactivated']} o'chirildi."
+            )
+            request.session['sync_status'] = 'success'
+        except Exception as exc:
+            request.session['sync_result'] = f"Xato: {exc}"
+            request.session['sync_status'] = 'error'
+        return redirect('dashboard-employees')
+
     def get_queryset(self):
         qs = User.objects.all()
         search = self.request.GET.get('search', '').strip()
@@ -89,6 +104,8 @@ class EmployeeListView(DashboardAccessMixin, ListView):
             .distinct().order_by('department')
         )
         ctx['filters'] = self.request.GET
+        ctx['sync_result'] = self.request.session.pop('sync_result', None)
+        ctx['sync_status'] = self.request.session.pop('sync_status', None)
         return ctx
 
 
