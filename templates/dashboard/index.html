@@ -1,0 +1,89 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Overview — Dashboard{% endblock %}
+{% block nav_index %}active{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 28px;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; color: #f1f5f9;">Overview</h1>
+    <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 4px;">{{ today }} — bugungi holat</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px;">
+    <div class="stat-card">
+        <div class="stat-value" style="color: #38bdf8;">{{ total_employees }}</div>
+        <div class="stat-label">Jami xodimlar</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: #4ade80;">{{ present_count }}</div>
+        <div class="stat-label">O'z vaqtida</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: #fbbf24;">{{ late_count }}</div>
+        <div class="stat-label">Kechikkan</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: #f87171;">{{ absent_count }}</div>
+        <div class="stat-label">Yo'q</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: #94a3b8;">{{ incomplete_count }}</div>
+        <div class="stat-label">Tugallanmagan</div>
+    </div>
+</div>
+
+{% if unsent_count > 0 %}
+<div style="background: #78350f22; border: 1px solid #f59e0b44; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; font-size: 0.875rem; color: #fbbf24;">
+    ⚠️ {{ unsent_count }} ta sessiya API ga yuborilmadi. <a href="{% url 'dashboard-reports' %}?is_sent=false" style="text-decoration: underline;">Ko'rish →</a>
+</div>
+{% endif %}
+
+<div class="card">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #334155; font-size: 0.875rem; font-weight: 600;">
+        Oxirgi hodisalar
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Xodim</th>
+                <th>Bo'lim</th>
+                <th>Amal</th>
+                <th>Vaqt</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in recent_events %}
+            <tr>
+                <td>
+                    <a href="{% url 'dashboard-employee-detail' event.user.id %}" style="color: #f1f5f9; text-decoration: none; font-weight: 500;">
+                        {{ event.user.name }}
+                    </a>
+                </td>
+                <td style="color: #94a3b8;">{{ event.user.department }}</td>
+                <td>
+                    {% if event.action == 'came' %}
+                    <span class="badge badge-came">✅ Keldi</span>
+                    {% else %}
+                    <span class="badge badge-gone">🚪 Ketdi</span>
+                    {% endif %}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #94a3b8;">
+                    {{ event.scanned_at|date:"Y-m-d H:i" }}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #475569;">
+                    {{ event.terminal_ip|default:"—" }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #475569; padding: 32px;">
+                    Bugun hech qanday hodisa yo'q.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

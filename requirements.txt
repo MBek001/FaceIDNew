@@ -1,0 +1,11 @@
+django>=5.0
+celery[redis]
+django-celery-beat
+aiogram==3.7.0
+face-recognition
+numpy
+Pillow
+pytz
+python-decouple
+requests
+redis

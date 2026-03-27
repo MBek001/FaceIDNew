@@ -1,0 +1,179 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}{{ employee.name }} — Dashboard{% endblock %}
+{% block nav_employees %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard-employees' %}" style="color: #94a3b8; text-decoration: none;">Employees</a> / {{ employee.name }}{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start;">
+    <div>
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <div style="font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">{{ employee.name }}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 16px; font-family: 'IBM Plex Mono', monospace;">{{ employee.email }}</div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">Bo'lim</span>
+                    <span style="color: #f1f5f9;">{{ employee.department|default:"—" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">Lavozim</span>
+                    <span style="color: #f1f5f9;">{{ employee.position|default:"—" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">Telefon</span>
+                    <span style="font-family: 'IBM Plex Mono', monospace; color: #94a3b8;">{{ employee.phone|default:"—" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b;">Yuz ro'yxati</span>
+                    {% if employee.is_face_registered %}
+                    <span class="badge badge-present">✅ Bor</span>
+                    {% else %}
+                    <span class="badge badge-incomplete">Yo'q</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b;">Holat</span>
+                    {% if employee.is_active %}
+                    <span class="badge badge-present">Faol</span>
+                    {% else %}
+                    <span class="badge badge-absent">Nofaol</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b;">Shift</span>
+                    <span style="color: #f1f5f9;">{{ current_shift|default:"Belgilanmagan" }}</span>
+                </div>
+                {% if employee.telegram_id %}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">Telegram ID</span>
+                    <span style="font-family: 'IBM Plex Mono', monospace; color: #94a3b8;">{{ employee.telegram_id }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card" style="padding: 20px;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">Bu oyda</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="text-align: center; padding: 12px; background: #0f172a; border-radius: 8px;">
+                    <div style="font-size: 1.6rem; font-weight: 700; color: #4ade80; font-family: 'IBM Plex Mono', monospace;">{{ present_days }}</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">O'z vaqtida</div>
+                </div>
+                <div style="text-align: center; padding: 12px; background: #0f172a; border-radius: 8px;">
+                    <div style="font-size: 1.6rem; font-weight: 700; color: #fbbf24; font-family: 'IBM Plex Mono', monospace;">{{ late_days }}</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Kechikkan</div>
+                </div>
+                <div style="text-align: center; padding: 12px; background: #0f172a; border-radius: 8px;">
+                    <div style="font-size: 1.6rem; font-weight: 700; color: #94a3b8; font-family: 'IBM Plex Mono', monospace;">{{ incomplete_days }}</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Tugallanmagan</div>
+                </div>
+                <div style="text-align: center; padding: 12px; background: #0f172a; border-radius: 8px;">
+                    <div style="font-size: 1.6rem; font-weight: 700; color: #38bdf8; font-family: 'IBM Plex Mono', monospace;">{{ total_hours }}h</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Jami soat</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card" style="margin-bottom: 24px;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #334155; font-size: 0.875rem; font-weight: 600;">
+                Bu oyning sessiyalari
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sana</th>
+                        <th>Keldi</th>
+                        <th>Ketdi</th>
+                        <th>Ish vaqti</th>
+                        <th>Holat</th>
+                        <th>Yuborildi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem;">{{ session.session_date }}</td>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #4ade80;">
+                            {{ session.computed_came_at|date:"H:i"|default:"—" }}
+                        </td>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #f87171;">
+                            {{ session.computed_gone_at|date:"H:i"|default:"—" }}
+                        </td>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #38bdf8;">
+                            {{ session.work_hours_display|default:"—" }}
+                        </td>
+                        <td>
+                            {% if session.status == 'present' %}<span class="badge badge-present">O'z vaqtida</span>
+                            {% elif session.status == 'late' %}<span class="badge badge-late">Kechikkan</span>
+                            {% elif session.status == 'absent' %}<span class="badge badge-absent">Yo'q</span>
+                            {% else %}<span class="badge badge-incomplete">Tugallanmagan</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if session.is_sent %}
+                            <span class="badge badge-sent">Yuborildi</span>
+                            {% else %}
+                            <span class="badge badge-unsent">Kutmoqda</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #475569; padding: 24px;">
+                            Bu oyda ma'lumot yo'q.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #334155; font-size: 0.875rem; font-weight: 600;">
+                Oxirgi hodisalar
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sana va vaqt</th>
+                        <th>Amal</th>
+                        <th>Ishonch</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in recent_events %}
+                    <tr>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #94a3b8;">
+                            {{ event.scanned_at|date:"Y-m-d H:i:s" }}
+                        </td>
+                        <td>
+                            {% if event.action == 'came' %}
+                            <span class="badge badge-came">✅ Keldi</span>
+                            {% else %}
+                            <span class="badge badge-gone">🚪 Ketdi</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #64748b;">
+                            {{ event.face_confidence }}
+                        </td>
+                        <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: #475569;">
+                            {{ event.terminal_ip|default:"—" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #475569; padding: 24px;">
+                            Hodisalar yo'q.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ofis Terminali</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0d1117;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #clock {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            padding: 16px;
+            color: #e2e8f0;
+            letter-spacing: 4px;
+            flex-shrink: 0;
+        }
+
+        #main-buttons {
+            display: flex;
+            flex: 1;
+            width: 100%;
+        }
+
+        .action-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: filter 0.15s ease;
+            user-select: none;
+        }
+
+        .action-btn:hover { filter: brightness(1.1); }
+        .action-btn:active { filter: brightness(0.9); }
+
+        #btn-came {
+            background: #15803d;
+            color: #ffffff;
+        }
+
+        #btn-gone {
+            background: #b91c1c;
+            color: #ffffff;
+        }
+
+        .btn-label {
+            font-size: 1.2rem;
+            margin-top: 12px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        #overlay.visible { display: flex; }
+
+        #countdown-display {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #f59e0b;
+            font-family: 'Courier New', monospace;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #webcam-video {
+            width: 480px;
+            height: 360px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            background: #000;
+            object-fit: cover;
+        }
+
+        #canvas-capture { display: none; }
+
+        #status-message {
+            font-size: 1.4rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        #result-card {
+            display: none;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 32px 48px;
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+        }
+
+        #result-card.visible { display: block; }
+
+        #result-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        #result-department {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+
+        #result-time {
+            font-size: 1.6rem;
+            font-family: 'Courier New', monospace;
+            color: #38bdf8;
+            margin-bottom: 16px;
+        }
+
+        #result-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 999px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        #result-badge.came { background: #15803d; color: #fff; }
+        #result-badge.gone { background: #b91c1c; color: #fff; }
+
+        #error-banner {
+            display: none;
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+            border-radius: 12px;
+            padding: 20px 32px;
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #fca5a5;
+        }
+
+        #error-banner.visible { display: block; }
+
+        #spinner {
+            display: none;
+            width: 48px;
+            height: 48px;
+            border: 4px solid #334155;
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        #spinner.visible { display: block; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    {% load static %}
+    {% csrf_token %}
+
+    <div id="clock">00:00:00</div>
+
+    <div id="main-buttons">
+        <button class="action-btn" id="btn-came" data-action="came">
+            ✅ KELDI
+            <span class="btn-label">Bosing va kameraga qarang</span>
+        </button>
+        <button class="action-btn" id="btn-gone" data-action="gone">
+            🚪 KETDI
+            <span class="btn-label">Bosing va kameraga qarang</span>
+        </button>
+    </div>
+
+    <div id="overlay">
+        <video id="webcam-video" autoplay playsinline muted></video>
+        <canvas id="canvas-capture"></canvas>
+        <div id="countdown-display"></div>
+        <div id="status-message"></div>
+        <div id="spinner"></div>
+        <div id="result-card">
+            <div id="result-name"></div>
+            <div id="result-department"></div>
+            <div id="result-time"></div>
+            <div id="result-badge"></div>
+        </div>
+        <div id="error-banner"></div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const options = {
+                timeZone: 'Asia/Tashkent',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            document.getElementById('clock').textContent = now.toLocaleTimeString('uz-UZ', options);
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        const overlay = document.getElementById('overlay');
+        const video = document.getElementById('webcam-video');
+        const canvas = document.getElementById('canvas-capture');
+        const countdownDisplay = document.getElementById('countdown-display');
+        const statusMessage = document.getElementById('status-message');
+        const spinner = document.getElementById('spinner');
+        const resultCard = document.getElementById('result-card');
+        const errorBanner = document.getElementById('error-banner');
+
+        let currentAction = null;
+
+        function resetOverlay() {
+            overlay.classList.remove('visible');
+            countdownDisplay.textContent = '';
+            statusMessage.textContent = '';
+            spinner.classList.remove('visible');
+            resultCard.classList.remove('visible');
+            errorBanner.classList.remove('visible');
+            currentAction = null;
+        }
+
+        function stopAllTracks() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+                video.srcObject = null;
+            }
+        }
+
+        async function runScanFlow(action) {
+            currentAction = action;
+            overlay.classList.add('visible');
+            video.style.display = 'block';
+            countdownDisplay.textContent = '';
+            statusMessage.textContent = 'Kamera yoqilmoqda...';
+
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                video.srcObject = stream;
+                await new Promise(resolve => { video.onloadedmetadata = resolve; });
+            } catch (err) {
+                showError('Kameraga ruxsat berilmadi.');
+                stopAllTracks();
+                setTimeout(resetOverlay, 4000);
+                return;
+            }
+
+            statusMessage.textContent = '';
+
+            for (let i = 3; i >= 1; i--) {
+                countdownDisplay.textContent = i;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            countdownDisplay.textContent = '';
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            stopAllTracks();
+            video.style.display = 'none';
+
+            statusMessage.textContent = 'Tekshirilmoqda...';
+            spinner.classList.add('visible');
+
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('image', blob, 'capture.jpg');
+                formData.append('action', action);
+
+                let response;
+                try {
+                    response = await fetch('/terminal/scan/', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                        body: formData
+                    });
+                } catch (networkErr) {
+                    spinner.classList.remove('visible');
+                    statusMessage.textContent = '';
+                    showError("Tarmoq xatosi. Qaytadan urinib ko'ring.");
+                    setTimeout(resetOverlay, 4000);
+                    return;
+                }
+
+                spinner.classList.remove('visible');
+                statusMessage.textContent = '';
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResult(data, action);
+                    setTimeout(resetOverlay, 5000);
+                } else {
+                    showError(data.error || 'Noma\'lum xato.');
+                    setTimeout(resetOverlay, 4000);
+                }
+            }, 'image/jpeg', 0.92);
+        }
+
+        function showResult(data, action) {
+            document.getElementById('result-name').textContent = data.user_name;
+            document.getElementById('result-department').textContent = data.department;
+            document.getElementById('result-time').textContent = data.scanned_at;
+            const badge = document.getElementById('result-badge');
+            badge.textContent = action === 'came' ? '✅ Keldi' : '🚪 Ketdi';
+            badge.className = 'result-badge ' + (action === 'came' ? 'came' : 'gone');
+            resultCard.classList.add('visible');
+        }
+
+        function showError(message) {
+            errorBanner.textContent = message;
+            errorBanner.classList.add('visible');
+        }
+
+        document.getElementById('btn-came').addEventListener('click', () => runScanFlow('came'));
+        document.getElementById('btn-gone').addEventListener('click', () => runScanFlow('gone'));
+    </script>
+</body>
+</html>

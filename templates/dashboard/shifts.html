@@ -1,0 +1,155 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Smenalar — Dashboard{% endblock %}
+{% block nav_shifts %}active{% endblock %}
+{% block breadcrumb %}Shifts{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 28px;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; color: #f1f5f9;">Smenalar</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+    <div class="card" style="padding: 24px;">
+        <h2 style="font-size: 1rem; font-weight: 600; margin-bottom: 20px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.8rem;">Yangi smena qo'shish</h2>
+        <form method="post" style="display: flex; flex-direction: column; gap: 14px;">
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="create_shift">
+            <div>
+                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Nomi</label>
+                <input type="text" name="name" required placeholder="Masalan: Kunduzgi smena" style="width: 100%;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Boshlanish</label>
+                    <input type="time" name="shift_start" required style="width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Tugash</label>
+                    <input type="time" name="shift_end" required style="width: 100%;">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Kechikish chegarasi (daqiqa)</label>
+                    <input type="number" name="late_threshold_minutes" value="15" min="0" style="width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Hisobot kechikishi (soat)</label>
+                    <input type="number" name="report_delay_hours" value="2" min="0" style="width: 100%;">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Saqlash</button>
+        </form>
+    </div>
+
+    <div class="card" style="padding: 24px;">
+        <h2 style="font-size: 0.8rem; font-weight: 600; margin-bottom: 20px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Xodimga smena biriktirish</h2>
+        <form method="post" style="display: flex; flex-direction: column; gap: 14px;">
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="assign_shift">
+            <div>
+                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Xodim</label>
+                <select name="user_id" required style="width: 100%;">
+                    <option value="">Xodimni tanlang</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Smena</label>
+                <select name="shift_id" required style="width: 100%;">
+                    <option value="">Smenani tanlang</option>
+                    {% for shift in shifts %}
+                    <option value="{{ shift.id }}">{{ shift }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Amal qilish sanasidan boshlab</label>
+                <input type="date" name="effective_from" required style="width: 100%;">
+            </div>
+            <button type="submit" class="btn btn-primary">Biriktirish</button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #334155; font-size: 0.875rem; font-weight: 600;">
+        Barcha smenalar
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Nomi</th>
+                <th>Boshlanish</th>
+                <th>Tugash</th>
+                <th>Tungi</th>
+                <th>Kechikish (daq)</th>
+                <th>Hisobot vaqti</th>
+                <th>Xodimlar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shift in shifts %}
+            <tr>
+                <td style="font-weight: 500;">{{ shift.name }}</td>
+                <td style="font-family: 'IBM Plex Mono', monospace; color: #4ade80;">{{ shift.shift_start|time:"H:i" }}</td>
+                <td style="font-family: 'IBM Plex Mono', monospace; color: #f87171;">{{ shift.shift_end|time:"H:i" }}</td>
+                <td>
+                    {% if shift.is_night_shift %}
+                    <span class="badge" style="background: #1e1b4b; color: #818cf8;">Tungi</span>
+                    {% else %}
+                    <span style="color: #475569; font-size: 0.8rem;">—</span>
+                    {% endif %}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; color: #94a3b8;">{{ shift.late_threshold_minutes }}</td>
+                <td style="font-family: 'IBM Plex Mono', monospace; color: #94a3b8;">{{ shift.report_fire_time|time:"H:i" }}</td>
+                <td style="font-family: 'IBM Plex Mono', monospace; color: #38bdf8;">{{ shift.employee_count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #475569; padding: 24px;">
+                    Hali smena qo'shilmagan.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #334155; font-size: 0.875rem; font-weight: 600;">
+        Oxirgi biriktirishlar
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Xodim</th>
+                <th>Smena</th>
+                <th>Amal qilish sanasidan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in assignments|slice:":30" %}
+            <tr>
+                <td>
+                    <a href="{% url 'dashboard-employee-detail' assignment.user.id %}" style="color: #f1f5f9; text-decoration: none; font-weight: 500;">
+                        {{ assignment.user.name }}
+                    </a>
+                </td>
+                <td style="color: #94a3b8;">{{ assignment.shift.name }}</td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #64748b;">{{ assignment.effective_from }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center; color: #475569; padding: 24px;">
+                    Biriktirishlar yo'q.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

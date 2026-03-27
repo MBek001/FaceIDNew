@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish — Face ID Attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; font-family: 'Inter', sans-serif; }
+        input { background: #0f172a; border: 1px solid #334155; color: #f1f5f9; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; outline: none; width: 100%; }
+        input:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px #f59e0b22; }
+        label { display: block; font-size: 0.8rem; font-weight: 500; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+    <div style="width: 380px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 40px 36px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">⬡</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: #f59e0b; font-family: 'IBM Plex Mono', monospace;">FaceID Attendance</div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Admin Panel</div>
+        </div>
+
+        {% if form.errors %}
+        <div style="background: #7f1d1d; border: 1px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; font-size: 0.85rem; color: #fca5a5;">
+            Login yoki parol noto'g'ri.
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 16px;">
+                <label for="id_username">Foydalanuvchi nomi</label>
+                <input type="text" name="username" id="id_username" autocomplete="username" autofocus>
+            </div>
+            <div style="margin-bottom: 24px;">
+                <label for="id_password">Parol</label>
+                <input type="password" name="password" id="id_password" autocomplete="current-password">
+            </div>
+            <button type="submit" style="width: 100%; padding: 12px; background: #f59e0b; color: #0f172a; font-weight: 600; font-size: 0.9rem; border: none; border-radius: 8px; cursor: pointer; transition: background 0.15s;">
+                Kirish
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; text-align: center; font-size: 0.75rem; color: #475569;">
+            Akkaunt yo'qmi? <span style="color: #64748b;">Administrator bilan bog'laning.</span>
+        </div>
+    </div>
+</body>
+</html>

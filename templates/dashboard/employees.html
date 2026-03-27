@@ -1,0 +1,117 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Xodimlar — Dashboard{% endblock %}
+{% block nav_employees %}active{% endblock %}
+{% block breadcrumb %}Employees{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700; color: #f1f5f9;">Xodimlar</h1>
+        <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 4px;">{{ page_obj.paginator.count }} ta xodim topildi</p>
+    </div>
+</div>
+
+<div class="card" style="padding: 16px; margin-bottom: 16px;">
+    <form method="get" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Qidirish</label>
+            <input type="text" name="search" value="{{ filters.search }}" placeholder="Ism yoki email...">
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Bo'lim</label>
+            <select name="department">
+                <option value="">Barcha bo'limlar</option>
+                {% for dept in departments %}
+                <option value="{{ dept }}" {% if filters.department == dept %}selected{% endif %}>{{ dept }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Yuz ro'yxati</label>
+            <select name="face_registered">
+                <option value="">Barchasi</option>
+                <option value="true" {% if filters.face_registered == "true" %}selected{% endif %}>Ro'yxatdan o'tgan</option>
+                <option value="false" {% if filters.face_registered == "false" %}selected{% endif %}>Ro'yxatdan o'tmagan</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Holat</label>
+            <select name="is_active">
+                <option value="">Barchasi</option>
+                <option value="true" {% if filters.is_active == "true" %}selected{% endif %}>Faol</option>
+                <option value="false" {% if filters.is_active == "false" %}selected{% endif %}>Nofaol</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrlash</button>
+        <a href="{% url 'dashboard-employees' %}" class="btn btn-secondary">Tozalash</a>
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Ism</th>
+                <th>Email</th>
+                <th>Bo'lim</th>
+                <th>Lavozim</th>
+                <th>Yuz</th>
+                <th>Holat</th>
+                <th>Sinxronlangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td>
+                    <a href="{% url 'dashboard-employee-detail' employee.id %}" style="color: #f1f5f9; text-decoration: none; font-weight: 500;">
+                        {{ employee.name }}
+                    </a>
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #94a3b8;">{{ employee.email }}</td>
+                <td style="color: #94a3b8;">{{ employee.department|default:"—" }}</td>
+                <td style="color: #94a3b8;">{{ employee.position|default:"—" }}</td>
+                <td>
+                    {% if employee.is_face_registered %}
+                    <span class="badge badge-present">✅ Bor</span>
+                    {% else %}
+                    <span class="badge badge-incomplete">Yo'q</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if employee.is_active %}
+                    <span class="badge badge-present">Faol</span>
+                    {% else %}
+                    <span class="badge badge-absent">Nofaol</span>
+                    {% endif %}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: #475569;">
+                    {{ employee.synced_at|date:"Y-m-d"|default:"—" }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #475569; padding: 32px;">
+                    Xodim topilmadi.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.has_other_pages %}
+    <div style="padding: 16px 20px; border-top: 1px solid #334155; display: flex; gap: 8px; align-items: center;">
+        {% if page_obj.has_previous %}
+        <a href="?{% for key, val in filters.items %}{% if key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">← Oldingi</a>
+        {% endif %}
+        <span style="font-size: 0.8rem; color: #94a3b8; flex: 1; text-align: center;">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+        <a href="?{% for key, val in filters.items %}{% if key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Keyingi →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

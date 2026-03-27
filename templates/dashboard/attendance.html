@@ -1,0 +1,119 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Davomat — Dashboard{% endblock %}
+{% block nav_attendance %}active{% endblock %}
+{% block breadcrumb %}Attendance Log{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700; color: #f1f5f9;">Davomat jurnali</h1>
+        <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 4px;">{{ page_obj.paginator.count }} ta yozuv</p>
+    </div>
+</div>
+
+<div class="card" style="padding: 16px; margin-bottom: 16px;">
+    <form method="get" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Boshlanish sanasi</label>
+            <input type="date" name="date_from" value="{{ filters.date_from }}">
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Tugash sanasi</label>
+            <input type="date" name="date_to" value="{{ filters.date_to }}">
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Amal</label>
+            <select name="action">
+                <option value="">Barchasi</option>
+                <option value="came" {% if filters.action == "came" %}selected{% endif %}>Keldi</option>
+                <option value="gone" {% if filters.action == "gone" %}selected{% endif %}>Ketdi</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Xodim</label>
+            <select name="user_id">
+                <option value="">Barcha xodimlar</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if filters.user_id == user.id|stringformat:"s" %}selected{% endif %}>{{ user.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrlash</button>
+        <a href="{% url 'dashboard-attendance' %}" class="btn btn-secondary">Tozalash</a>
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Xodim</th>
+                <th>Bo'lim</th>
+                <th>Amal</th>
+                <th>Vaqt</th>
+                <th>Ishonch</th>
+                <th>IP</th>
+                <th>Rasm</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in events %}
+            <tr>
+                <td>
+                    <a href="{% url 'dashboard-employee-detail' event.user.id %}" style="color: #f1f5f9; text-decoration: none; font-weight: 500;">
+                        {{ event.user.name }}
+                    </a>
+                </td>
+                <td style="color: #94a3b8; font-size: 0.8rem;">{{ event.user.department|default:"—" }}</td>
+                <td>
+                    {% if event.action == 'came' %}
+                    <span class="badge badge-came">✅ Keldi</span>
+                    {% else %}
+                    <span class="badge badge-gone">🚪 Ketdi</span>
+                    {% endif %}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #94a3b8;">
+                    {{ event.scanned_at|date:"Y-m-d H:i:s" }}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #64748b;">
+                    {{ event.face_confidence }}
+                </td>
+                <td style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: #475569;">
+                    {{ event.terminal_ip|default:"—" }}
+                </td>
+                <td>
+                    {% if event.photo %}
+                    <a href="{{ event.photo.url }}" target="_blank" style="color: #38bdf8; font-size: 0.8rem; text-decoration: none;">
+                        Ko'rish →
+                    </a>
+                    {% else %}
+                    <span style="color: #475569; font-size: 0.8rem;">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #475569; padding: 32px;">
+                    Hodisalar topilmadi.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.has_other_pages %}
+    <div style="padding: 16px 20px; border-top: 1px solid #334155; display: flex; gap: 8px; align-items: center;">
+        {% if page_obj.has_previous %}
+        <a href="?{% for key, val in filters.items %}{% if key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">← Oldingi</a>
+        {% endif %}
+        <span style="font-size: 0.8rem; color: #94a3b8; flex: 1; text-align: center;">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+        <a href="?{% for key, val in filters.items %}{% if key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Keyingi →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
