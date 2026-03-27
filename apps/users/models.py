@@ -10,6 +10,7 @@ class User(models.Model):
     phone = models.CharField(max_length=30, blank=True)
     department = models.CharField(max_length=100, blank=True)
     position = models.CharField(max_length=100, blank=True)
+    attendance_user_id = models.IntegerField(null=True, blank=True, unique=True)
     telegram_id = models.BigIntegerField(null=True, blank=True, unique=True)
     face_encoding = models.TextField(null=True, blank=True)
     is_face_registered = models.BooleanField(default=False)

@@ -140,26 +140,30 @@ def send_shift_reports():
         failed_count = 0
 
         for session in sessions:
+            came_at = session.computed_came_at.astimezone(TASHKENT_TZ) if session.computed_came_at else None
+            gone_at = session.computed_gone_at.astimezone(TASHKENT_TZ) if session.computed_gone_at else None
+
+            if not session.user.attendance_user_id:
+                failed_count += 1
+                continue
+
             payload = {
-                'user_id': session.user.id,
-                'session_date': str(session.session_date),
-                'came_at': session.computed_came_at.isoformat() if session.computed_came_at else None,
-                'gone_at': session.computed_gone_at.isoformat() if session.computed_gone_at else None,
-                'work_minutes': session.work_minutes,
-                'status': session.status,
+                'employee_id': session.user.attendance_user_id,
+                'attendance_date': str(session.session_date),
+                'check_in_time': came_at.strftime('%H:%M:%S') if came_at else None,
             }
+            if gone_at:
+                payload['check_out_time'] = gone_at.strftime('%H:%M:%S')
 
             success = False
             api_response_data = None
 
             for attempt in range(3):
                 try:
-                    headers = {}
-                    if settings.EXTERNAL_API_KEY:
-                        headers['Authorization'] = f'Bearer {settings.EXTERNAL_API_KEY}'
+                    headers = {'X-Attendance-Key': settings.ATTENDANCE_API_KEY}
 
                     response = requests.post(
-                        f'{settings.EXTERNAL_API_URL}/attendance/record',
+                        f'{settings.EXTERNAL_API_URL}/attendance/records',
                         json=payload,
                         headers=headers,
                         timeout=15

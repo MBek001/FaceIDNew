@@ -5,17 +5,16 @@ from apps.users.models import User
 
 
 def sync_users_from_api():
-    headers = {}
-    if settings.EXTERNAL_API_KEY:
-        headers['Authorization'] = f'Bearer {settings.EXTERNAL_API_KEY}'
+    headers = {'X-Attendance-Key': settings.ATTENDANCE_API_KEY}
 
     response = requests.get(
-        f'{settings.EXTERNAL_API_URL}/get-users',
+        f'{settings.EXTERNAL_API_URL}/attendance/users',
         headers=headers,
         timeout=30
     )
     response.raise_for_status()
-    api_users = response.json()
+    data = response.json()
+    api_users = data.get('items', [])
 
     api_user_ids = set()
     created_count = 0
@@ -28,11 +27,10 @@ def sync_users_from_api():
         _, created = User.objects.update_or_create(
             id=user_id,
             defaults={
-                'name': user_data.get('name', ''),
+                'attendance_user_id': user_data['id'],
+                'name': user_data.get('full_name') or user_data.get('name', ''),
                 'email': user_data.get('email', ''),
-                'phone': user_data.get('phone', ''),
-                'department': user_data.get('department', ''),
-                'position': user_data.get('position', ''),
+                'position': user_data.get('role', ''),
                 'is_active': True,
                 'synced_at': timezone.now(),
             }

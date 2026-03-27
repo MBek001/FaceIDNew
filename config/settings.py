@@ -88,7 +88,7 @@ CELERY_BEAT_SCHEDULE = {
 
 BOT_TOKEN = config('TELEGRAM_BOT_TOKEN')
 EXTERNAL_API_URL = config('EXTERNAL_API_URL')
-EXTERNAL_API_KEY = config('EXTERNAL_API_KEY', default='')
+ATTENDANCE_API_KEY = config('ATTENDANCE_API_KEY', default='')
 FACE_TOLERANCE = config('FACE_TOLERANCE', cast=float, default=0.5)
 
 LOGIN_URL = '/dashboard/login/'
